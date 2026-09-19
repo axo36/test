@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Creo Studio — Header + intro</title>
+<script>
+  /* Avant l'affichage : thème sauvegardé + décision "intro complète ou pas ?" */
+  (function(){
+    var r = document.documentElement;
+    try{
+      r.dataset.theme = (localStorage.getItem('creo-theme') === 'light') ? 'light' : 'dark';
+      var seen  = +localStorage.getItem('creo-intro-seen') || 0;
+      var force = /[?&]intro\b/.test(location.search);
+      // intro complète seulement à la 1ère visite, puis 24 h de repos
+      if(!force && Date.now() - seen < 864e5) r.classList.add('skip-intro');
+    }catch(e){ r.dataset.theme = 'dark'; }
+  })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  /* =========================================================
+     1. COULEURS (thème sombre par défaut, clair par-dessus)
+     ========================================================= */
+  :root{
+    color-scheme: dark;
+    --bg:#0E1210; --bg-soft:#12160F;
+    --ink:#EAE6DC; --ink-dim:#8E978F;
+    --lime:#B6FF5C; --clay:#E8804A; --blue:#4DA3FF;
+    --line:#23281F; --tick-major:#2E362A;
+    box-sizing:border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  :root[data-theme="light"]{
+    color-scheme: light;
+    --bg:#F6F3EA; --bg-soft:#ECE8DB;
+    --ink:#171B15; --ink-dim:#5B645C;
+    --lime:#4E9B00; --clay:#D9622B; --blue:#2A6FDB;
+    --line:#D8D3C4; --tick-major:#B9B39F;
+  }
+  html{ background:var(--bg); scroll-padding-top: env(safe-area-inset-top, 0px); }
+
+  *{ margin:0; padding:0; box-sizing:border-box; }
+
+  body{
+    background:var(--bg-soft);
+    color:var(--ink);
+    font-family:'Space Grotesk', system-ui, sans-serif;
+    transition: background-color .5s ease, color .5s ease;
+    min-height:100vh;
+  }
+
+  .clay{ stroke:var(--clay); transition:stroke .5s; }
+  .lime{ stroke:var(--lime); transition:stroke .5s; }
+  .flime{ fill:var(--lime); transition:fill .5s; }
+  .fclay{ fill:var(--clay); transition:fill .5s; }
+
+  /* =========================================================
+     2. LE LOGO (marque + mot) — splash ET header
+        Tout est en "em" : changer font-size change toute la taille.
+     ========================================================= */
+  .brand{
+    display:inline-flex; align-items:center;
+    text-decoration:none; color:var(--ink);
+    font-size:24px;
+  }
+  .mark{ width:2em; height:2em; flex:none; }
+  .mark svg{ width:100%; height:100%; display:block; overflow:visible; }
+
+  .ring-outer{ transform-origin:50% 50%; animation:spin 22s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .words{ display:flex; overflow-x:clip; overflow-y:visible; }
+  .head-brand .words{ overflow:visible; }   /* le header laisse "studio" dépasser pendant les gags */
+  .words-in{
+    flex:none; display:inline-flex; flex-direction:column; align-items:flex-start;
+    padding-left:.42em; white-space:nowrap;
+  }
+
+  .creo{
+    display:flex; font-weight:700; font-size:1em; line-height:1;
+    letter-spacing:.14em; margin-right:-.14em;
+  }
+  .creo .l{
+    display:inline-block; opacity:0; transform:translateY(.35em);
+    transition:opacity .35s ease, transform .4s cubic-bezier(.2,.8,.2,1);
+  }
+  .creo .l.on{ opacity:1; transform:none; }
+  .creo .e{ color:var(--blue); transition:color .5s; }
+  .creo .e.on{ animation:eflash .9s ease-out; }
+  @keyframes eflash{
+    0%{ text-shadow:0 0 .7em var(--blue); }
+    100%{ text-shadow:0 0 0 transparent; }
+  }
+  .head-brand .creo .e.on{ animation:none; }
+
+  /* "studio" a une largeur de 0 : le texte peut être long (gags)
+     sans jamais décaler le reste du header */
+  .studio{
+    display:block; width:0; white-space:nowrap;
+    font-family:'JetBrains Mono', ui-monospace, monospace;
+    font-weight:400; font-size:.5em; line-height:1.15; min-height:1.15em;
+    margin-top:.6em; color:var(--ink-dim);
+    transition:color .5s;
+  }
+  .typed.err{
+    color:var(--clay);
+    text-decoration:underline wavy var(--clay);
+    text-underline-offset:.22em;
+  }
+  /* le curseur de terminal : un vrai "_" */
+  .caret{
+    display:inline-block; color:var(--lime); font-weight:700;
+    margin-left:.05em;
+    text-shadow:0 0 .55em rgba(182,255,92,.35);
+    animation:blink 1.05s steps(1) infinite;
+    transition:color .5s;
+  }
+  .caret.solid{ animation:none; }
+  .caret.off{ visibility:hidden; }
+  @keyframes blink{ 50%{ opacity:0; } }
+
+  /* =========================================================
+     3. SPLASH (écran d'intro)
+     ========================================================= */
+  #splash{
+    position:fixed; inset:0; z-index:100;
+    background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transition:background-color .9s ease;
+  }
+  .skip-intro #splash{ display:none !important; }
+  #splash .brand{ font-size:min(72px, 12vw); transform-origin:0 0; will-change:transform; }
+  #splash .hint{
+    position:absolute; bottom:calc(24px + env(safe-area-inset-bottom, 0px));
+    font:12px 'JetBrains Mono', monospace; color:var(--ink-dim);
+    opacity:.55; transition:opacity .4s;
+  }
+
+  /* =========================================================
+     4. HEADER
+     ========================================================= */
+  header{
+    background:var(--bg);
+    padding:22px 40px 0;
+    transition:background-color .5s ease;
+  }
+  .bar{ display:flex; align-items:center; justify-content:space-between; gap:32px; }
+  .right{ display:flex; align-items:center; gap:30px; }
+
+  .head-brand.hold{ opacity:0; }
+
+  nav{
+    display:flex; align-items:center; gap:34px;
+    font-family:'JetBrains Mono', monospace; font-size:13px;
+    transition:opacity .6s ease .25s, transform .6s ease .25s;
+  }
+  nav a{
+    position:relative; color:var(--ink-dim); text-decoration:none;
+    padding-bottom:10px; transition:color .18s ease;
+  }
+  nav a:hover{ color:var(--ink); }
+  nav a::after{
+    content:""; position:absolute; left:0; right:0; bottom:0; height:2px;
+    background:var(--clay); transform:scaleX(0); transform-origin:left;
+    transition:transform .22s ease;
+  }
+  nav a:hover::after{ transform:scaleX(1); }
+  nav a.active{ color:var(--ink); }
+  nav a.active::after{ background:var(--lime); transform:scaleX(1); }
+
+  .intro nav, .intro .theme{ opacity:0; transform:translateY(-6px); pointer-events:none; }
+
+  .ruler{ margin-top:20px; height:14px; display:flex; align-items:flex-end; overflow:hidden; }
+  .ruler .ticks{ display:flex; width:100%; height:100%; align-items:flex-end; }
+  .ruler .tick{ flex:1 0 auto; width:44px; height:5px; border-left:1px solid var(--line); transition:border-color .5s; }
+  .ruler .tick:nth-child(5n+1){ height:10px; border-left-color:var(--tick-major); }
+  .base{ height:1px; background:var(--line); width:100%; transition:background-color .5s; }
+
+  /* =========================================================
+     5. BOUTON JOUR / NUIT (l'encoche)
+     ========================================================= */
+  .theme{
+    position:relative; flex:none; width:66px; height:32px; padding:0;
+    border-radius:999px; border:1px solid var(--line); overflow:hidden; cursor:pointer;
+    background:#0B1226;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.55);
+    transition:opacity .6s ease .25s, transform .6s ease .25s, border-color .5s;
+  }
+  .theme:focus-visible{ outline:2px solid var(--lime); outline-offset:3px; }
+  .theme .sky{ position:absolute; inset:0; transition:opacity .5s ease; }
+  .theme .night{ background:linear-gradient(120deg,#0A1024,#1C2850); }
+  .theme .day{ background:linear-gradient(120deg,#5FB8F5,#BFE6FF); opacity:0; }
+  :root[data-theme="light"] .theme .night{ opacity:0; }
+  :root[data-theme="light"] .theme .day{ opacity:1; }
+
+  .star{
+    position:absolute; width:2px; height:2px; border-radius:50%; background:#fff;
+    animation:twinkle 2.4s ease-in-out infinite;
+    transition:transform .5s ease;
+  }
+  .star.s1{ left:34px; top:8px; }
+  .star.s2{ left:46px; top:18px; width:3px; height:3px; animation-delay:.6s; }
+  .star.s3{ left:40px; top:23px; animation-delay:1.1s; }
+  .star.s4{ left:54px; top:9px; animation-delay:1.6s; }
+  .star.s5{ left:29px; top:17px; animation-delay:.3s; }
+  @keyframes twinkle{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
+  :root[data-theme="light"] .star{ transform:translateY(-16px); }
+
+  .cloud{
+    position:absolute; height:9px; border-radius:9px; background:#fff; opacity:.95;
+    transform:translateY(24px);
+    transition:transform .6s .1s cubic-bezier(.2,.8,.2,1);
+  }
+  .cloud::before{
+    content:""; position:absolute; left:20%; bottom:3px; width:9px; height:9px;
+    border-radius:50%; background:#fff;
+  }
+  .cloud.c1{ left:6px;  bottom:3px; width:22px; }
+  .cloud.c2{ left:20px; bottom:9px; width:17px; }
+  :root[data-theme="light"] .cloud{ transform:none; }
+
+  .knob{
+    position:absolute; top:3px; left:3px; width:24px; height:24px; border-radius:50%;
+    transition:transform .55s cubic-bezier(.68,-.35,.27,1.35);
+  }
+  :root[data-theme="light"] .knob{ transform:translateX(34px); }
+  .knob .moon, .knob .sun{
+    position:absolute; inset:0; border-radius:50%;
+    transition:opacity .4s ease, transform .55s ease;
+  }
+  .moon{
+    background:#E9E6DA;
+    box-shadow:inset -3px -2px 0 rgba(0,0,0,.12), 0 0 8px rgba(233,230,218,.35);
+  }
+  .moon i{ position:absolute; border-radius:50%; background:rgba(0,0,0,.14); }
+  .moon i:nth-child(1){ width:6px; height:6px; left:5px; top:4px; }
+  .moon i:nth-child(2){ width:4px; height:4px; left:13px; top:12px; }
+  .moon i:nth-child(3){ width:3px; height:3px; left:6px; top:14px; }
+  .sun{
+    background:radial-gradient(circle at 35% 35%, #FFE98A, #FFC83D);
+    box-shadow:0 0 0 3px rgba(255,214,90,.25), 0 0 12px rgba(255,200,60,.8);
+    opacity:0; transform:rotate(-90deg) scale(.6);
+  }
+  :root[data-theme="light"] .moon{ opacity:0; transform:rotate(90deg) scale(.6); }
+  :root[data-theme="light"] .sun{ opacity:1; transform:none; }
+
+  /* =========================================================
+     6. DÉMO
+     ========================================================= */
+  .stage{
+    padding:120px 40px; text-align:center; color:var(--ink-dim);
+    font-family:'JetBrains Mono', monospace; font-size:13px;
+    display:flex; flex-direction:column; align-items:center; gap:18px;
+  }
+  .stage .row{ display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+  .stage small{ font-size:11px; opacity:.7; max-width:520px; line-height:1.6; }
+  .stage button{
+    font:inherit; color:var(--ink); background:transparent; cursor:pointer;
+    border:1px solid var(--line); border-radius:999px; padding:9px 18px;
+    transition:border-color .2s, color .2s;
+  }
+  .stage button:hover{ border-color:var(--lime); color:var(--lime); }
+
+  @media (max-width:640px){
+    header{ padding:16px 16px 0; }
+    .bar{ flex-wrap:wrap; gap:14px; }
+    .right{ width:100%; justify-content:space-between; gap:12px; }
+    nav{ gap:14px; font-size:12px; }
+    .brand{ font-size:22px; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .ring-outer{ animation:none; }
+    .caret{ animation:none; }
+  }
+</style>
+</head>
+<body class="intro">
+
+<!-- ===================== SPLASH ===================== -->
+<div id="splash">
+  <div class="brand" id="sBrand">
+    <span class="mark">
+      <svg viewBox="0 0 40 40">
+        <circle id="haloC" class="clay" cx="20" cy="20" r="17"   fill="none" stroke-width="5.5" opacity="0"/>
+        <circle id="haloB" class="lime" cx="20" cy="20" r="10.5" fill="none" stroke-width="5.5" opacity="0"/>
+        <circle id="discA" class="flime" cx="20" cy="20" r="0" fill-opacity="0"/>
+        <circle id="trC" class="clay" cx="20" cy="20" r="17"   fill="none" stroke-linecap="round"/>
+        <circle id="trB" class="lime" cx="20" cy="20" r="10.5" fill="none" stroke-linecap="round"/>
+        <circle id="dotC" class="fclay" r="0"/>
+        <circle id="dotB" class="flime" r="0"/>
+        <circle id="dotA" class="flime" r="0"/>
+      </svg>
+    </span>
+    <span class="words" id="sWords" style="width:0">
+      <span class="words-in" id="sIn">
+        <span class="creo"><span class="l">C</span><span class="l">R</span><span class="l e">E</span><span class="l">O</span></span>
+        <span class="studio"><span class="typed" id="typed"></span><span class="caret solid off">_</span></span>
+      </span>
+    </span>
+  </div>
+  <span class="hint">cliquer pour passer</span>
+</div>
+
+<!-- ===================== HEADER ===================== -->
+<header>
+  <div class="bar">
+    <a href="#" class="brand head-brand hold" id="hBrand">
+      <span class="mark">
+        <svg viewBox="0 0 40 40">
+          <g class="ring-outer" id="hRing">
+            <circle class="clay" cx="20" cy="20" r="17" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-dasharray="67.6 39.2"/>
+          </g>
+          <circle class="lime" cx="20" cy="20" r="10.5" fill="none" stroke-width="2.4"/>
+          <circle class="flime" cx="20" cy="20" r="3.4"/>
+        </svg>
+      </span>
+      <span class="words">
+        <span class="words-in">
+          <span class="creo"><span class="l on">C</span><span class="l on">R</span><span class="l e on">E</span><span class="l on">O</span></span>
+          <span class="studio"><span class="typed" id="hTyped">studio</span><span class="caret" id="hCaret">_</span></span>
+        </span>
+      </span>
+    </a>
+
+    <div class="right">
+      <nav>
+        <a href="#" class="active">accueil</a>
+        <a href="#">projet</a>
+        <a href="#">à propos</a>
+        <a href="#">contact</a>
+      </nav>
+
+      <button class="theme" id="theme" role="switch" aria-checked="false" aria-label="Passer en mode clair">
+        <span class="sky night">
+          <i class="star s1"></i><i class="star s2"></i><i class="star s3"></i><i class="star s4"></i><i class="star s5"></i>
+        </span>
+        <span class="sky day"><i class="cloud c1"></i><i class="cloud c2"></i></span>
+        <span class="knob">
+          <span class="moon"><i></i><i></i><i></i></span>
+          <span class="sun"></span>
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <div class="ruler"><div class="ticks" id="ticks"></div></div>
+  <div class="base"></div>
+</header>
+
+<div class="stage">
+  <span>// le reste de la page vient ici</span>
+  <div class="row">
+    <button id="replay">↻ rejouer l'intro</button>
+    <button id="gagBtn">▶ gag de « studio »</button>
+  </div>
+  <small>
+    L'intro complète ne se lance qu'à la 1ʳᵉ visite (puis 24 h de repos). Ensuite, seul « studio »
+    se retape discrètement dans le header, et fait un petit gag de code toutes les 45 à 90 secondes.
+    Pour forcer l'intro : ajoute <b>?intro</b> à l'adresse.
+  </small>
+</div>
+
+<script>
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+
+  /* ---------- éléments ---------- */
+  const root = document.documentElement, body = document.body;
+  const splash = $('#splash'), sBrand = $('#sBrand'), sWords = $('#sWords'), sIn = $('#sIn');
+  const letters = [...sBrand.querySelectorAll('.creo .l')];
+  const typed = $('#typed'), caret = sBrand.querySelector('.caret');
+  const discA = $('#discA'), trC = $('#trC'), trB = $('#trB'), haloB = $('#haloB'), haloC = $('#haloC');
+  const dotA = $('#dotA'), dotB = $('#dotB'), dotC = $('#dotC');
+  const hBrand = $('#hBrand'), hRing = $('#hRing'), hTyped = $('#hTyped'), hCaret = $('#hCaret');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- outils de maths / easing ---------- */
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const easeOut = x => 1 - Math.pow(1 - x, 3);
+  const easeIOs = x => -(Math.cos(Math.PI * x) - 1) / 2;
+  const TWO_PI = Math.PI * 2, PI2 = Math.PI / 2;
+
+  /* =========================================================
+     A. LE LOGO — le scénario (d'après ton storyboard), en secondes
+        1) 3 points empilés, celui du haut = le centre
+        2) les deux du bas hésitent : avance (comète), recule (comète)
+        3) ils partent en spirale, tournent dans le sens des aiguilles
+        4) deux cercles complets, avec un "bourgeon" qui court dessus
+        5) le point du centre tourne -> la force centrifuge l'écarte -> disque
+        6) l'anneau orange se calme -> on croit voir un arc lent
+     ========================================================= */
+  const T_L   = 1.2;         // fin des hésitations : ça démarre
+  const T_A0  = 2.5;         // le point du centre commence à tourner
+  const T_PK  = 3.4;         // vitesse max de l'anneau orange
+  const T_C   = 4.7;         // l'arc orange a fini de se calmer
+  const W_END = TWO_PI / 22; // vitesse finale de l'arc = 1 tour / 22 s (comme le header)
+  const LAG   = 0.22;        // plus ça va vite, plus la traînée est longue
+  const LAG_H = 0.30;        // idem pendant les hésitations (comètes)
+  const C_LMAX = 67.6 / 17;  // longueur finale de l'arc orange (radians)
+  const H_END = 0.25;        // où les points s'arrêtent après les hésitations
+  const AMP = { A: 0, B: 0.8, C: 0.6 };   // A (centre) ne bouge pas pendant les hésitations
+
+  /* hésitations : avance, recule, avance plus loin, recule un peu... et hop */
+  const HS = [[0, .28, 0, .35], [.28, .55, .35, 0], [.55, .88, 0, .7], [.88, T_L, .7, H_END]];
+  function hes(t){
+    if (t >= T_L) return H_END;
+    for (const [a, b, from, to] of HS)
+      if (t < b) return from + (to - from) * easeIOs(clamp((t - a) / (b - a)));
+    return H_END;
+  }
+
+  /* vitesses de rotation (radians / seconde) */
+  const omB = t => {                                   // cercle vert : monte, tient, retombe
+    if (t < T_L + .1) return 0;
+    if (t < 2.8) return 34 * Math.pow(clamp((t - T_L - .1) / 1.5), 1.6);
+    if (t < 3.2) return 34;
+    return 34 * (1 - easeIOs(clamp((t - 3.2) / 1.0)));
+  };
+  const gC = t => {                                    // forme de la vitesse de l'anneau orange
+    const a = T_L + .1;
+    if (t < a) return 0;
+    if (t <= T_PK) return Math.pow((t - a) / (T_PK - a), 2.2);        // accélère
+    if (t < T_C) return 1 - easeIOs((t - T_PK) / (T_C - T_PK));       // se calme
+    return 0;
+  };
+  const omAup = t => t < T_A0 ? 0 : 34 * Math.pow(clamp((t - T_A0) / 1.2), 2);  // point du centre
+
+  /* Pour que l'arc orange finisse EXACTEMENT là où le logo du header commence,
+     on règle sa puissance "S" : l'angle final doit tomber juste. */
+  const DT = 1 / 240;
+  let intG = 0;
+  for (let i = 0; i * DT < T_C; i++) intG += gC(i * DT) * DT;
+  const phiL = PI2 + AMP.C * H_END;
+  const PEAK = 55;
+  const m = Math.round((PEAK * intG + phiL + W_END * (T_C - T_L) - C_LMAX) / TWO_PI);
+  const S = (C_LMAX + TWO_PI * m - phiL - W_END * (T_C - T_L)) / intG;
+  const omC = t => t < T_L ? 0 : (t < T_C ? W_END + S * gC(t) : W_END);
+
+  /* instant où le cercle vert devient complet */
+  let T_BF = T_L;
+  while (omB(T_BF) * LAG < TWO_PI && T_BF < 5) T_BF += DT;
+
+  /* table d'angles : on additionne la vitesse image par image une fois pour toutes */
+  function build(amp, om){
+    const N = Math.ceil(T_C / DT), tab = new Float64Array(N + 1);
+    let phi = PI2 + amp * H_END;
+    for (let i = 0; i <= N; i++){
+      const t = i * DT;
+      if (t < T_L){ tab[i] = PI2 + amp * hes(t); phi = tab[i]; }
+      else { tab[i] = phi; phi += om(t) * DT; }
+    }
+    return tab;
+  }
+  const tabA = build(AMP.A, omAup), tabB = build(AMP.B, omB), tabC = build(AMP.C, omC);
+  function at(tab, t, extra = 0){
+    const f = t / DT, i = Math.floor(f), last = tab.length - 1;
+    if (i >= last) return tab[last] + extra * (t - last * DT);
+    const x = f - i;
+    return tab[i] * (1 - x) + tab[i + 1] * x;
+  }
+  /* vitesse signée (+ = sens des aiguilles, - = à reculons) */
+  function vel(tab, t, extra = 0){
+    const e = .012, t0 = Math.max(0, t - e);
+    return (at(tab, t + e, extra) - at(tab, t0, extra)) / (t + e - t0);
+  }
+
+  /* ---------- dessin ---------- */
+  function arc(el, R, start, len, a){
+    el.setAttribute('stroke-width', (2.4 * a).toFixed(3));
+    el.setAttribute('stroke-dasharray', `${(len * R).toFixed(3)} ${(TWO_PI * R).toFixed(3)}`);
+    el.setAttribute('transform', `rotate(${(start * 180 / Math.PI).toFixed(3)} 20 20)`);
+  }
+  function dot(el, x, y, r){
+    el.setAttribute('cx', x.toFixed(3));
+    el.setAttribute('cy', y.toFixed(3));
+    el.setAttribute('r', Math.max(0, r).toFixed(3));
+  }
+
+  /* une image du logo au temps t */
+  function draw(t){
+    t = Math.max(0, t);
+    const ap = i => easeOut(clamp((t - i * .1) / .4));   // apparition des 3 points
+
+    // Point A (centre) : immobile au début, puis il tourne de plus en plus vite ;
+    // la force centrifuge écarte son orbite (avec un petit dépassement) et il "peint" un disque.
+    const aA = ap(0), phA = at(tabA, t);
+    const rho = 2.2 * easeOut(clamp((t - T_A0) / 1.2)) + .8 * Math.sin(Math.PI * clamp((t - T_A0) / 1.8));
+    dot(dotA, 20 + rho * Math.cos(phA), 20 + rho * Math.sin(phA), 1.2 * aA);
+    discA.setAttribute('r', ((rho + 1.2) * aA).toFixed(3));
+    discA.setAttribute('fill-opacity', clamp(omAup(t) / 18).toFixed(3));
+
+    // Point B (vert) : hésite (comète), puis spirale -> cercle complet
+    const aB = ap(1), phB = at(tabB, t), vB = vel(tabB, t);
+    const LB = t >= T_BF ? TWO_PI : Math.min(TWO_PI, Math.abs(vB) * (t < T_L ? LAG_H : LAG));
+    arc(trB, 10.5, vB >= 0 ? phB - LB : phB, LB, aB);
+    const bdB = easeOut(clamp((t - T_L) / .5)) * (1 - easeIOs(clamp((t - 3.3) / .7)));  // "bourgeon"
+    dot(dotB, 20 + 10.5 * Math.cos(phB), 20 + 10.5 * Math.sin(phB), 1.2 * aB * (1 + .9 * bdB));
+    haloB.setAttribute('opacity', (.22 * clamp((Math.abs(vB) - 22) / 12)).toFixed(3));     // flou de vitesse
+
+    // Point C (orange) : encore plus vite -> anneau flou, puis il se calme :
+    // la traînée raccourcit et on croit voir un arc lent
+    const aC = ap(2), phC = at(tabC, t, W_END), vC = vel(tabC, t, W_END);
+    let LC = Math.abs(vC) * (t < T_L ? LAG_H : LAG);
+    LC = t < T_PK ? Math.min(TWO_PI, LC) : clamp(LC, C_LMAX, TWO_PI);
+    arc(trC, 17, vC >= 0 ? phC - LC : phC, LC, aC);
+    const bdC = easeOut(clamp((t - T_L) / .5)) * (1 - easeIOs(clamp((t - 3.7) / .7)));
+    dot(dotC, 20 + 17 * Math.cos(phC), 20 + 17 * Math.sin(phC), 1.2 * aC * (1 + .9 * bdC));
+    haloC.setAttribute('opacity', (.22 * clamp((Math.abs(vC) - 25) / 20)).toFixed(3));
+  }
+
+  /* =========================================================
+     B. SÉQUENCEUR (annulable)
+     ========================================================= */
+  let runId = 0, raf = 0, logoT0 = 0, wordsW = 0;
+  class Abort extends Error {}
+  const sleep = (ms, id) => new Promise((res, rej) =>
+    setTimeout(() => id === runId ? res() : rej(new Abort()), ms));
+
+  async function typeStr(str, id){
+    for (const ch of str){
+      typed.textContent += ch;
+      await sleep(85 + Math.random() * 70, id);
+    }
+  }
+  async function backspace(n, id){
+    for (let i = 0; i < n; i++){
+      typed.textContent = typed.textContent.slice(0, -1);
+      await sleep(80, id);
+    }
+  }
+
+  function loop(now){
+    draw((now - logoT0) / 1000);
+    raf = requestAnimationFrame(loop);
+  }
+
+  function reset(){
+    cancelAnimationFrame(raf);
+    root.classList.remove('skip-intro');
+    splash.style.display = 'flex';
+    splash.style.background = '';
+    sBrand.style.transition = 'none';
+    sBrand.style.transform = '';
+    $('.hint', splash).style.opacity = '';
+    body.classList.add('intro');
+    hBrand.classList.add('hold');
+    hRing.style.animation = 'none';
+    letters.forEach(l => l.classList.remove('on'));
+    typed.textContent = '';
+    typed.classList.remove('err');
+    caret.classList.add('solid', 'off');
+    // on mesure la largeur du mot, puis on le "ferme" à 0 pour centrer le logo seul
+    sWords.style.transition = 'none';
+    sWords.style.width = 'auto';
+    wordsW = sIn.offsetWidth;
+    sWords.style.width = '0px';
+    void sWords.offsetWidth;
+    sWords.style.transition = 'width .7s cubic-bezier(.2,.8,.2,1)';
+    draw(0);
+  }
+
+  /* fin de l'intro (ou pas d'intro du tout) */
+  function finishNow({ mini = false } = {}){
+    cancelAnimationFrame(raf);
+    const el = logoT0 ? Math.max(0, (performance.now() - logoT0) / 1000 - T_C) : 0;
+    splash.style.display = 'none';
+    body.classList.remove('intro');
+    hBrand.classList.remove('hold');
+    // le logo du header continue la rotation là où le splash s'est arrêté
+    hRing.style.animation = reduced ? 'none' : `spin 22s linear ${-el}s infinite`;
+    try { localStorage.setItem('creo-intro-seen', String(Date.now())); } catch(e){}
+    if (mini) miniIntro();
+    scheduleGag(true);
+  }
+
+  async function flight(id){
+    // le logo du splash "vole" jusqu'à sa place dans le header (technique FLIP)
+    const a = sBrand.getBoundingClientRect();
+    const b = hBrand.getBoundingClientRect();
+    const s = b.width / a.width;
+    $('.hint', splash).style.opacity = '0';
+    splash.style.background = 'transparent';
+    sBrand.style.transition = 'transform .9s cubic-bezier(.65,0,.25,1)';
+    sBrand.style.transform = `translate(${b.left - a.left}px, ${b.top - a.top}px) scale(${s})`;
+    body.classList.remove('intro');           // le menu et le bouton apparaissent
+    await sleep(950, id);
+    finishNow();
+  }
+
+  async function play(){
+    const id = ++runId;
+    gagRun++; clearTimeout(gagTimer);          // on coupe les gags pendant l'intro
+    hTyped.textContent = 'studio'; hTyped.classList.remove('err'); hCaret.classList.remove('solid');
+    try { await document.fonts.ready; } catch(e){}
+    if (id !== runId) return;
+    reset();
+    logoT0 = performance.now();
+    raf = requestAnimationFrame(loop);
+    try{
+      await sleep(4300, id);                       // le logo se forme et tourne
+      sWords.style.width = wordsW + 'px';          // le logo glisse à gauche
+      await sleep(500, id);
+      for (const l of letters){                    // C R E O, lettre par lettre
+        l.classList.add('on');
+        await sleep(140, id);
+      }
+      await sleep(350, id);
+      caret.classList.remove('off');               // le curseur "_" apparaît
+      await sleep(400, id);
+      await typeStr('stduio', id);                 // faute de frappe...
+      typed.classList.add('err');
+      await sleep(700, id);
+      await backspace(4, id);                      // ...on efface...
+      typed.classList.remove('err');
+      await sleep(250, id);
+      await typeStr('udio', id);                   // ...et on corrige
+      caret.classList.remove('solid');             // le curseur se remet à clignoter
+      await sleep(1100, id);
+      await flight(id);
+    }catch(e){ if (!(e instanceof Abort)) throw e; }
+  }
+
+  splash.addEventListener('click', () => { runId++; finishNow(); });
+  $('#replay').addEventListener('click', () => { window.scrollTo(0, 0); play(); });
+
+  /* =========================================================
+     C. LE HEADER VIT : mini-intro et gags de "studio"
+        (tout se passe dans le header : rien au premier plan)
+     ========================================================= */
+  let gagRun = 0, gagTimer = 0, busy = false, lastGag = -1;
+  const gwait = (ms, id) => new Promise((res, rej) =>
+    setTimeout(() => id === gagRun ? res() : rej(new Abort()), ms));
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  /* passe de "from" à "to" comme quelqu'un qui tape : efface jusqu'au début commun, puis retape */
+  async function morph(to, id){
+    let cur = hTyped.textContent, k = 0;
+    while (k < cur.length && k < to.length && cur[k] === to[k]) k++;
+    while (cur.length > k){ cur = cur.slice(0, -1); hTyped.textContent = cur; await gwait(45, id); }
+    for (let i = k; i < to.length; i++){ cur += to[i]; hTyped.textContent = cur; await gwait(rand(65, 120), id); }
+  }
+
+  /* visite suivante : juste "studio" qui se retape en 0,5 s dans le header */
+  async function miniIntro(){
+    if (reduced) return;
+    const id = ++gagRun; busy = true;
+    hTyped.textContent = ''; hCaret.classList.add('solid');
+    try{
+      await gwait(300, id);
+      for (const ch of 'studio'){ hTyped.textContent += ch; await gwait(70, id); }
+    }catch(e){ if (!(e instanceof Abort)) throw e; }
+    finally{ if (id === gagRun){ hCaret.classList.remove('solid'); busy = false; } }
+  }
+
+  const GAGS = [
+    { to: '<h1>studio</h1>' },
+    { to: 'studio.exe',               err: true },
+    { to: 'console.log("studio")' },
+    { to: 'sudo studio' },
+    { to: '<studio />' },
+    { to: 'while(1) studio++',        err: true },
+    { to: 'studio --help' },
+    { to: '404 studio not found',     err: true },
+    { to: 'const studio = "creo";' },
+  ];
+
+  async function gag(){
+    if (busy || body.classList.contains('intro')) return;
+    busy = true;
+    const id = ++gagRun;
+    hCaret.classList.add('solid');
+    try{
+      let i; do { i = Math.floor(Math.random() * GAGS.length); } while (i === lastGag);
+      lastGag = i;
+      const g = GAGS[i];
+      await morph(g.to, id);
+      if (g.err) hTyped.classList.add('err');
+      await gwait(rand(1500, 2200), id);
+      hTyped.classList.remove('err');
+      await morph('studio', id);
+    }catch(e){
+      if (!(e instanceof Abort)) throw e;
+      hTyped.textContent = 'studio'; hTyped.classList.remove('err');
+    }finally{
+      if (id === gagRun){ hCaret.classList.remove('solid'); busy = false; }
+    }
+  }
+
+  /* un gag de temps en temps (jamais si l'onglet est caché) */
+  function scheduleGag(first){
+    clearTimeout(gagTimer);
+    if (reduced) return;
+    const fire = async () => {
+      if (document.hidden || busy){ gagTimer = setTimeout(fire, 8000); return; }
+      await gag();
+      scheduleGag(false);
+    };
+    gagTimer = setTimeout(fire, first ? 20000 : rand(45000, 90000));
+  }
+  $('#gagBtn').addEventListener('click', () => gag());
+
+  /* =========================================================
+     D. BOUTON JOUR / NUIT
+     ========================================================= */
+  const btn = $('#theme');
+  function setTheme(t){
+    root.dataset.theme = t;
+    btn.setAttribute('aria-checked', String(t === 'light'));
+    btn.setAttribute('aria-label', t === 'light' ? 'Passer en mode sombre' : 'Passer en mode clair');
+    try { localStorage.setItem('creo-theme', t); } catch(e){}
+  }
+  setTheme(root.dataset.theme === 'light' ? 'light' : 'dark');
+  btn.addEventListener('click', () => setTheme(root.dataset.theme === 'light' ? 'dark' : 'light'));
+
+  /* ---------- règle graduée ---------- */
+  function ticks(){
+    const track = $('#ticks');
+    const n = Math.ceil(innerWidth / 44) + 2;
+    track.replaceChildren(...Array.from({ length: n }, () => {
+      const d = document.createElement('div'); d.className = 'tick'; return d;
+    }));
+  }
+  ticks();
+  addEventListener('resize', ticks);
+
+  /* ---------- go ---------- */
+  if (reduced) finishNow();
+  else if (root.classList.contains('skip-intro')) finishNow({ mini: true });
+  else play();
+})();
+</script>
+</body>
+</html>
